@@ -1,4 +1,5 @@
 # deps
 node_modules/
+.env
 
 Back-end_Foundations_Assessment_Rubrics (1).pdf
