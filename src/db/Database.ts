@@ -30,6 +30,21 @@ export class Database {
                     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
                 )
             `;
+
+            await this.query`
+                CREATE TABLE IF NOT EXISTS surveys (
+                    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                    user_id UUID,
+                    title VARCHAR(200) NOT NULL,
+                    description VARCHAR(2000),
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                )
+            `;
+
+            await this.query`
+                ALTER TABLE surveys ADD CONSTRAINT fk_surveys_users FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
+            `;
         } catch (error) {
             console.error("Failed to initialize database schema:", error);
             throw error;
