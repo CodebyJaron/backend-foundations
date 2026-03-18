@@ -1,21 +1,11 @@
 import type { Context, Hono } from "hono";
 import { sign } from "hono/jwt";
-import { z } from "zod";
 import { AuthService } from "../services/AuthService";
 import { Controller } from "./Controller";
+import { loginSchema, registerSchema } from "../validation/authSchemas";
 
 const JWT_SECRET = process.env.JWT_SECRET!;
 const TOKEN_EXPIRY_SEC = 60 * 60;
-
-const registerSchema = z.object({
-    email: z.string().email("Invalid email format"),
-    password: z.string().min(6, "Password must be at least 6 characters"),
-});
-
-const loginSchema = z.object({
-    email: z.string().email("Invalid email format"),
-    password: z.string().min(1, "Password is required"),
-});
 
 export class AuthController extends Controller {
     path = "/auth";
