@@ -1,29 +1,13 @@
 import type { Context, Hono } from "hono";
-import { z } from "zod";
-import { authMiddleware } from "../middleware/authMiddleware";
+import { authMiddleware } from "../middleware/AuthMiddleware";
 import { PageService } from "../services/PageService";
 import { Controller } from "./Controller";
-
-const surveyParamSchema = z.object({
-    surveyId: z.string().uuid(),
-});
-
-const pageParamSchema = z.object({
-    surveyId: z.string().uuid(),
-    id: z.string().uuid(),
-});
-
-const createPageSchema = z.object({
-    title: z.string().min(1).max(200),
-    content: z.string().nullable().optional(),
-    position: z.number().int().min(1).optional(),
-});
-
-const updatePageSchema = z.object({
-    title: z.string().min(1).max(200).optional(),
-    content: z.string().nullable().optional(),
-    position: z.number().int().min(1).optional(),
-});
+import {
+    createPageSchema,
+    pageParamSchema,
+    surveyParamSchema,
+    updatePageSchema,
+} from "../validation/pageSchemas";
 
 export class PageController extends Controller {
     path = "/surveys/:surveyId/pages";

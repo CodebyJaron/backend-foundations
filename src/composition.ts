@@ -21,7 +21,14 @@ export function createAuthController(db: Database) {
 
 export function createSurveyController(db: Database) {
     const surveyRepository = new SurveyRepository(db);
-    const surveyService = new SurveyService(surveyRepository);
+    const pageRepository = new PageRepository(db);
+    const questionRepository = new QuestionRepository(db);
+
+    const surveyService = new SurveyService(
+        surveyRepository,
+        pageRepository,
+        questionRepository,
+    );
 
     return new SurveyController(surveyService);
 }

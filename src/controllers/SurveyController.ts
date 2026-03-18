@@ -1,22 +1,13 @@
 import type { Context, Hono } from "hono";
-import { z } from "zod";
 import { SurveyService } from "../services/SurveyService";
 import { Controller } from "./Controller";
-import { authMiddleware } from "../middleware/authMiddleware";
-
-const createSurveySchema = z.object({
-    title: z.string().min(1).max(200),
-    description: z.string().max(2000).optional(),
-});
-
-const updateSurveySchema = z.object({
-    title: z.string().min(1).max(200).optional(),
-    description: z.string().max(2000).nullable().optional(),
-});
-
-const idParamSchema = z.object({
-    id: z.string().uuid(),
-});
+import { authMiddleware } from "../middleware/AuthMiddleware";
+import {
+    createSurveySchema,
+    createSurveyWithAiSchema,
+    idParamSchema,
+    updateSurveySchema,
+} from "../validation/surveySchemas";
 
 export class SurveyController extends Controller {
     path = "/surveys";
@@ -32,6 +23,10 @@ export class SurveyController extends Controller {
 
         app.get(`${this.path}/:id`, authMiddleware, (c: Context) =>
             this.getById(c),
+        );
+
+        app.post(`${this.path}/ai`, authMiddleware, (c: Context) =>
+            this.createWithAi(c),
         );
 
         app.post(`${this.path}`, authMiddleware, (c: Context) =>
@@ -125,6 +120,64 @@ export class SurveyController extends Controller {
             },
             201,
         );
+    }
+
+    private async createWithAi(c: Context) {
+        const userId = c.get("userId") as string | undefined;
+        if (!userId) return c.json({ error: "Unauthorized" }, 401);
+
+        const body = await c.req.json();
+        const parsed = createSurveyWithAiSchema.safeParse(body);
+        if (!parsed.success) {
+            return c.json(
+                { error: "Validation failed", issues: parsed.error.issues },
+                400,
+            );
+        }
+
+        try {
+            const created = await this.surveyService.createWithOpenAI(
+                userId,
+                parsed.data,
+            );
+
+            return c.json(
+                {
+                    survey: {
+                        id: created.survey.id,
+                        title: created.survey.title,
+                        description: created.survey.description,
+                        createdAt: created.survey.createdAt.toISOString(),
+                        updatedAt: created.survey.updatedAt.toISOString(),
+                    },
+                    page: {
+                        id: created.page.id,
+                        surveyId: created.page.surveyId,
+                        title: created.page.title,
+                        content: created.page.content,
+                        position: created.page.position,
+                        createdAt: created.page.createdAt.toISOString(),
+                        updatedAt: created.page.updatedAt.toISOString(),
+                    },
+                    questions: created.questions.map((q) => ({
+                        id: q.id,
+                        pageId: q.pageId,
+                        type: q.type,
+                        text: q.text,
+                        options: q.options,
+                        position: q.position,
+                        createdAt: q.createdAt.toISOString(),
+                        updatedAt: q.updatedAt.toISOString(),
+                    })),
+                },
+                201,
+            );
+        } catch (error) {
+            return c.json(
+                { error: "Failed to create survey with AI", details: error },
+                500,
+            );
+        }
     }
 
     private async update(c: Context) {
