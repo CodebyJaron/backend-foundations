@@ -88,6 +88,56 @@ export class Database {
                     ON DELETE CASCADE;
                 `;
             }
+
+            await this.query`
+                CREATE TABLE IF NOT EXISTS questions (
+                    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                    page_id UUID NOT NULL,
+                    type VARCHAR(50) NOT NULL,
+                    text TEXT NOT NULL,
+                    options JSONB,
+                    position INT NOT NULL,
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                    CONSTRAINT uq_questions_page_position UNIQUE (page_id, position)
+                )
+            `;
+
+            const promptColumnExists = await this.query<{ column_name: string }>`
+                SELECT column_name
+                FROM information_schema.columns
+                WHERE table_name = 'questions'
+                  AND column_name = 'prompt'
+            `;
+            const textColumnExists = await this.query<{ column_name: string }>`
+                SELECT column_name
+                FROM information_schema.columns
+                WHERE table_name = 'questions'
+                  AND column_name = 'text'
+            `;
+            if (
+                promptColumnExists.length > 0 &&
+                (!textColumnExists || textColumnExists.length === 0)
+            ) {
+                await this.query`ALTER TABLE questions RENAME COLUMN prompt TO text`;
+            }
+
+            const questionsFkExists = await this.query<{ constraint_name: string }>`
+                SELECT constraint_name
+                FROM information_schema.table_constraints
+                WHERE table_name = 'questions'
+                  AND constraint_type = 'FOREIGN KEY'
+                  AND constraint_name = 'fk_questions_pages'
+            `;
+            if (!questionsFkExists || questionsFkExists.length === 0) {
+                await this.query`
+                    ALTER TABLE questions
+                    ADD CONSTRAINT fk_questions_pages
+                    FOREIGN KEY (page_id)
+                    REFERENCES pages(id)
+                    ON DELETE CASCADE;
+                `;
+            }
         } catch (error) {
             console.error("Failed to initialize database schema:", error);
             throw error;
