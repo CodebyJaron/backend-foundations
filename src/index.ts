@@ -12,7 +12,6 @@ const app = new Hono();
 
 const database = new Database(process.env.DATABASE_URL!);
 await database.connect();
-await database.initSchema();
 
 app.get("/health", async (c: Context) => {
     const [result] = await database.query<{ ok: number }>`SELECT 1 as ok`;
