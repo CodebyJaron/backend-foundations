@@ -3,6 +3,7 @@ import { Hono } from "hono";
 import {
     createAuthController,
     createPageController,
+    createQuestionController,
     createSurveyController,
 } from "./composition";
 import { Database } from "./db/Database";
@@ -21,6 +22,7 @@ app.get("/health", async (c: Context) => {
 createAuthController(database).register(app);
 createSurveyController(database).register(app);
 createPageController(database).register(app);
+createQuestionController(database).register(app);
 
 const shutdown = async () => {
     await database.close();
