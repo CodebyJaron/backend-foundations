@@ -52,7 +52,9 @@ export const questionSchema = z.discriminatedUnion("type", [
 
 export const updateQuestionSchema = z
     .object({
-        type: z.enum(["text", "multiple_choice", "number_scale", "yes_no"]).optional(),
+        type: z
+            .enum(["text", "multiple_choice", "number_scale", "yes_no"])
+            .optional(),
         text: z.string().min(1).optional(),
         options: z.unknown().nullable().optional(),
         position: z.number().int().min(1).optional(),
@@ -89,7 +91,10 @@ export const updateQuestionSchema = z
             }
         }
 
-        if ((val.type === "text" || val.type === "yes_no") && val.options !== undefined) {
+        if (
+            (val.type === "text" || val.type === "yes_no") &&
+            val.options !== undefined
+        ) {
             if (val.options !== null) {
                 ctx.addIssue({
                     code: z.ZodIssueCode.custom,
@@ -99,4 +104,3 @@ export const updateQuestionSchema = z
             }
         }
     });
-

@@ -1,25 +1,31 @@
 import type { Context, Hono } from "hono";
-import { sign } from "hono/jwt";
 import { AuthService } from "../services/AuthService";
+import { SessionRepository } from "../db/repositories/SessionRepository";
 import { Controller } from "./Controller";
 import { loginSchema, registerSchema } from "../validation/authSchemas";
+import { getBearerToken } from "../middleware/AuthMiddleware";
 
-const JWT_SECRET = process.env.JWT_SECRET!;
-const TOKEN_EXPIRY_SEC = 60 * 60;
+const SESSION_TTL_SEC = 60 * 60 * 24; // 24 hours
 
 export class AuthController extends Controller {
     path = "/auth";
 
     private authService: AuthService;
+    private sessionRepository: SessionRepository;
 
-    constructor(authService: AuthService) {
+    constructor(
+        authService: AuthService,
+        sessionRepository: SessionRepository,
+    ) {
         super();
         this.authService = authService;
+        this.sessionRepository = sessionRepository;
     }
 
     register(app: Hono) {
         app.post(`${this.path}/register`, (c: Context) => this.registerUser(c));
         app.post(`${this.path}/login`, (c: Context) => this.loginUser(c));
+        app.post(`${this.path}/logout`, (c: Context) => this.logoutUser(c));
     }
 
     private async registerUser(c: Context) {
@@ -66,25 +72,31 @@ export class AuthController extends Controller {
             return c.json({ error: result.error }, 401);
         }
 
-        // unit
-        const now = Math.floor(Date.now() / 1000);
-        const accessToken = await sign(
-            {
-                sub: result.id,
-                iat: now,
-                exp: now + TOKEN_EXPIRY_SEC,
-            },
-            JWT_SECRET,
-            "HS256",
+        const expiresAt = new Date(Date.now() + SESSION_TTL_SEC * 1000);
+        const session = await this.sessionRepository.create(
+            result.id,
+            expiresAt,
         );
 
         return c.json({
-            accessToken,
+            token: session.id,
+            tokenType: "Bearer",
+            expiresAt: session.expiresAt.toISOString(),
             user: {
                 id: result.id,
                 email: result.email,
                 createdAt: result.createdAt.toISOString(),
             },
         });
+    }
+
+    private async logoutUser(c: Context) {
+        const token = getBearerToken(c);
+
+        if (token) {
+            await this.sessionRepository.deleteBySessionId(token);
+        }
+
+        return c.json({ ok: true });
     }
 }

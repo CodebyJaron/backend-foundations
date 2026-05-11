@@ -1,5 +1,4 @@
-import type { Context, Hono } from "hono";
-import { authMiddleware } from "../middleware/AuthMiddleware";
+import type { Context, Hono, MiddlewareHandler } from "hono";
 import { QuestionService } from "../services/QuestionService";
 import { Controller } from "./Controller";
 import {
@@ -14,28 +13,35 @@ const createQuestionSchema = questionSchema;
 export class QuestionController extends Controller {
     path = "/surveys/:surveyId/pages/:pageId/questions";
     private readonly questionService: QuestionService;
+    private readonly authMiddleware: MiddlewareHandler;
 
-    constructor(questionService: QuestionService) {
+    constructor(
+        questionService: QuestionService,
+        authMiddleware: MiddlewareHandler,
+    ) {
         super();
         this.questionService = questionService;
+        this.authMiddleware = authMiddleware;
     }
 
     register(app: Hono) {
-        app.get(`${this.path}`, authMiddleware, (c: Context) => this.list(c));
+        app.get(`${this.path}`, this.authMiddleware, (c: Context) =>
+            this.list(c),
+        );
 
-        app.get(`${this.path}/:id`, authMiddleware, (c: Context) =>
+        app.get(`${this.path}/:id`, this.authMiddleware, (c: Context) =>
             this.getById(c),
         );
 
-        app.post(`${this.path}`, authMiddleware, (c: Context) =>
+        app.post(`${this.path}`, this.authMiddleware, (c: Context) =>
             this.create(c),
         );
 
-        app.put(`${this.path}/:id`, authMiddleware, (c: Context) =>
+        app.put(`${this.path}/:id`, this.authMiddleware, (c: Context) =>
             this.update(c),
         );
 
-        app.delete(`${this.path}/:id`, authMiddleware, (c: Context) =>
+        app.delete(`${this.path}/:id`, this.authMiddleware, (c: Context) =>
             this.remove(c),
         );
     }
@@ -47,7 +53,10 @@ export class QuestionController extends Controller {
         const parsedParams = pageParamSchema.safeParse(c.req.param());
         if (!parsedParams.success) {
             return c.json(
-                { error: "Validation failed", issues: parsedParams.error.issues },
+                {
+                    error: "Validation failed",
+                    issues: parsedParams.error.issues,
+                },
                 400,
             );
         }
@@ -79,7 +88,10 @@ export class QuestionController extends Controller {
         const parsedParams = questionParamSchema.safeParse(c.req.param());
         if (!parsedParams.success) {
             return c.json(
-                { error: "Validation failed", issues: parsedParams.error.issues },
+                {
+                    error: "Validation failed",
+                    issues: parsedParams.error.issues,
+                },
                 400,
             );
         }
@@ -114,7 +126,10 @@ export class QuestionController extends Controller {
         const parsedParams = pageParamSchema.safeParse(c.req.param());
         if (!parsedParams.success) {
             return c.json(
-                { error: "Validation failed", issues: parsedParams.error.issues },
+                {
+                    error: "Validation failed",
+                    issues: parsedParams.error.issues,
+                },
                 400,
             );
         }
@@ -170,7 +185,10 @@ export class QuestionController extends Controller {
         const parsedParams = questionParamSchema.safeParse(c.req.param());
         if (!parsedParams.success) {
             return c.json(
-                { error: "Validation failed", issues: parsedParams.error.issues },
+                {
+                    error: "Validation failed",
+                    issues: parsedParams.error.issues,
+                },
                 400,
             );
         }
@@ -215,7 +233,10 @@ export class QuestionController extends Controller {
         const parsedParams = questionParamSchema.safeParse(c.req.param());
         if (!parsedParams.success) {
             return c.json(
-                { error: "Validation failed", issues: parsedParams.error.issues },
+                {
+                    error: "Validation failed",
+                    issues: parsedParams.error.issues,
+                },
                 400,
             );
         }
@@ -234,4 +255,3 @@ export class QuestionController extends Controller {
         return c.json({ ok: true });
     }
 }
-

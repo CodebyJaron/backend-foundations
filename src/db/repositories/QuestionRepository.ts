@@ -1,5 +1,9 @@
 import { Database } from "../Database";
-import { Question, type QuestionRow, type QuestionType } from "../../models/Question";
+import {
+    Question,
+    type QuestionRow,
+    type QuestionType,
+} from "../../models/Question";
 
 export class QuestionRepository {
     private readonly db: Database;
@@ -8,7 +12,11 @@ export class QuestionRepository {
         this.db = db;
     }
 
-    async getNextPositionForPage(pageId: string, surveyId: string, userId: string) {
+    async getNextPositionForPage(
+        pageId: string,
+        surveyId: string,
+        userId: string,
+    ) {
         const [row] = await this.db.query<{ next_position: number }>`
             SELECT COALESCE(MAX(q.position), 0) + 1 AS next_position
             FROM questions q
@@ -115,11 +123,14 @@ export class QuestionRepository {
         const nextText = patch.text ?? existing.text;
         const nextOptions = (() => {
             if (patch.type === "text" || patch.type === "yes_no") return null;
-            return patch.options === undefined ? existing.options : patch.options;
+            return patch.options === undefined
+                ? existing.options
+                : patch.options;
         })();
         const nextPosition = patch.position ?? existing.position;
 
-        const optionsJson = nextOptions === null ? null : JSON.stringify(nextOptions);
+        const optionsJson =
+            nextOptions === null ? null : JSON.stringify(nextOptions);
 
         const [row] = await this.db.query<QuestionRow>`
             UPDATE questions q
@@ -160,4 +171,3 @@ export class QuestionRepository {
         return Boolean(row?.deleted);
     }
 }
-

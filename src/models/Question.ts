@@ -1,4 +1,8 @@
-export type QuestionType = "text" | "multiple_choice" | "number_scale" | "yes_no";
+export type QuestionType =
+    | "text"
+    | "multiple_choice"
+    | "number_scale"
+    | "yes_no";
 
 export interface QuestionRow {
     id: string;
@@ -25,8 +29,11 @@ export class Question {
 
     static fromRow(row: QuestionRow) {
         const type = row.type as QuestionType;
+
         const options =
-            typeof row.options === "string" ? JSON.parse(row.options) : row.options;
+            typeof row.options === "string"
+                ? JSON.parse(row.options)
+                : row.options;
 
         return new Question(
             row.id,
@@ -40,4 +47,3 @@ export class Question {
         );
     }
 }
-

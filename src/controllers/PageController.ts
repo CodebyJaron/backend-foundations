@@ -1,5 +1,4 @@
-import type { Context, Hono } from "hono";
-import { authMiddleware } from "../middleware/AuthMiddleware";
+import type { Context, Hono, MiddlewareHandler } from "hono";
 import { PageService } from "../services/PageService";
 import { Controller } from "./Controller";
 import {
@@ -12,28 +11,32 @@ import {
 export class PageController extends Controller {
     path = "/surveys/:surveyId/pages";
     private readonly pageService: PageService;
+    private readonly authMiddleware: MiddlewareHandler;
 
-    constructor(pageService: PageService) {
+    constructor(pageService: PageService, authMiddleware: MiddlewareHandler) {
         super();
         this.pageService = pageService;
+        this.authMiddleware = authMiddleware;
     }
 
     register(app: Hono) {
-        app.get(`${this.path}`, authMiddleware, (c: Context) => this.list(c));
+        app.get(`${this.path}`, this.authMiddleware, (c: Context) =>
+            this.list(c),
+        );
 
-        app.get(`${this.path}/:id`, authMiddleware, (c: Context) =>
+        app.get(`${this.path}/:id`, this.authMiddleware, (c: Context) =>
             this.getById(c),
         );
 
-        app.post(`${this.path}`, authMiddleware, (c: Context) =>
+        app.post(`${this.path}`, this.authMiddleware, (c: Context) =>
             this.create(c),
         );
 
-        app.put(`${this.path}/:id`, authMiddleware, (c: Context) =>
+        app.put(`${this.path}/:id`, this.authMiddleware, (c: Context) =>
             this.update(c),
         );
 
-        app.delete(`${this.path}/:id`, authMiddleware, (c: Context) =>
+        app.delete(`${this.path}/:id`, this.authMiddleware, (c: Context) =>
             this.remove(c),
         );
     }
@@ -45,7 +48,10 @@ export class PageController extends Controller {
         const parsedParams = surveyParamSchema.safeParse(c.req.param());
         if (!parsedParams.success) {
             return c.json(
-                { error: "Validation failed", issues: parsedParams.error.issues },
+                {
+                    error: "Validation failed",
+                    issues: parsedParams.error.issues,
+                },
                 400,
             );
         }
@@ -75,7 +81,10 @@ export class PageController extends Controller {
         const parsedParams = pageParamSchema.safeParse(c.req.param());
         if (!parsedParams.success) {
             return c.json(
-                { error: "Validation failed", issues: parsedParams.error.issues },
+                {
+                    error: "Validation failed",
+                    issues: parsedParams.error.issues,
+                },
                 400,
             );
         }
@@ -108,7 +117,10 @@ export class PageController extends Controller {
         const parsedParams = surveyParamSchema.safeParse(c.req.param());
         if (!parsedParams.success) {
             return c.json(
-                { error: "Validation failed", issues: parsedParams.error.issues },
+                {
+                    error: "Validation failed",
+                    issues: parsedParams.error.issues,
+                },
                 400,
             );
         }
@@ -153,7 +165,10 @@ export class PageController extends Controller {
         const parsedParams = pageParamSchema.safeParse(c.req.param());
         if (!parsedParams.success) {
             return c.json(
-                { error: "Validation failed", issues: parsedParams.error.issues },
+                {
+                    error: "Validation failed",
+                    issues: parsedParams.error.issues,
+                },
                 400,
             );
         }
@@ -196,7 +211,10 @@ export class PageController extends Controller {
         const parsedParams = pageParamSchema.safeParse(c.req.param());
         if (!parsedParams.success) {
             return c.json(
-                { error: "Validation failed", issues: parsedParams.error.issues },
+                {
+                    error: "Validation failed",
+                    issues: parsedParams.error.issues,
+                },
                 400,
             );
         }
@@ -214,4 +232,3 @@ export class PageController extends Controller {
         return c.json({ ok: true });
     }
 }
-
