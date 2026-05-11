@@ -20,4 +20,3 @@ export const updatePageSchema = z.object({
     content: z.string().nullable().optional(),
     position: z.number().int().min(1).optional(),
 });
-

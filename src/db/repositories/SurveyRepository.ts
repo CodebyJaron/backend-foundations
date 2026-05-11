@@ -53,7 +53,9 @@ export class SurveyRepository {
 
         const nextTitle = patch.title ?? existing.title;
         const nextDescription =
-            patch.description === undefined ? existing.description : patch.description;
+            patch.description === undefined
+                ? existing.description
+                : patch.description;
 
         const [row] = await this.db.query<SurveyRow>`
             UPDATE surveys
@@ -83,4 +85,3 @@ export class SurveyRepository {
         return Boolean(row?.deleted);
     }
 }
-

@@ -10,4 +10,3 @@ export const aiSurveySchema = z.object({
     }),
     questions: z.array(questionSchema).min(3).max(25),
 });
-

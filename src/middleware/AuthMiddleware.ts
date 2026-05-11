@@ -1,40 +1,30 @@
-import type { MiddlewareHandler } from "hono";
-import { verify } from "hono/jwt";
+import type { Context, MiddlewareHandler } from "hono";
+import { SessionRepository } from "../db/repositories/SessionRepository";
 
-type JwtPayload = {
-    sub?: string;
-    iat?: number;
-    exp?: number;
-};
+export function getBearerToken(c: Context): string | undefined {
+    const header = c.req.header("authorization") ?? "";
+    const match = header.match(/^Bearer\s+(.+)$/i);
+    return match?.[1]?.trim() || undefined;
+}
 
-export const authMiddleware: MiddlewareHandler = async (c, next) => {
-    const authHeader = c.req.header("Authorization") ?? "";
-    const match = authHeader.match(/^Bearer\s+(.+)$/i);
-    if (!match) {
-        return c.json(
-            { error: "Missing or invalid Authorization header" },
-            401,
-        );
-    }
+export function authMiddleware(
+    sessionRepository: SessionRepository,
+): MiddlewareHandler {
+    return async (c: Context, next) => {
+        const token = getBearerToken(c);
 
-    const token = match[1];
-    const secret = process.env.JWT_SECRET;
-    if (!secret) {
-        return c.json(
-            { error: "Server misconfigured: JWT_SECRET missing" },
-            500,
-        );
-    }
-
-    try {
-        const payload = await verify(token, secret, "HS256");
-        if (!payload?.sub || typeof payload.sub !== "string") {
-            return c.json({ error: "Invalid token payload" }, 401);
+        if (!token) {
+            return c.json({ error: "Unauthorized" }, 401);
         }
 
-        c.set("userId", payload.sub);
+        const userId =
+            await sessionRepository.findValidUserIdBySessionId(token);
+
+        if (!userId) {
+            return c.json({ error: "Unauthorized" }, 401);
+        }
+
+        c.set("userId", userId);
         await next();
-    } catch {
-        return c.json({ error: "Invalid or expired token" }, 401);
-    }
-};
+    };
+}

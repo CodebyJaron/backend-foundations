@@ -1,7 +1,6 @@
-import type { Context, Hono } from "hono";
+import type { Context, Hono, MiddlewareHandler } from "hono";
 import { SurveyService } from "../services/SurveyService";
 import { Controller } from "./Controller";
-import { authMiddleware } from "../middleware/AuthMiddleware";
 import {
     createSurveySchema,
     createSurveyWithAiSchema,
@@ -12,32 +11,39 @@ import {
 export class SurveyController extends Controller {
     path = "/surveys";
     private readonly surveyService: SurveyService;
+    private readonly authMiddleware: MiddlewareHandler;
 
-    constructor(surveyService: SurveyService) {
+    constructor(
+        surveyService: SurveyService,
+        authMiddleware: MiddlewareHandler,
+    ) {
         super();
         this.surveyService = surveyService;
+        this.authMiddleware = authMiddleware;
     }
 
     register(app: Hono) {
-        app.get(`${this.path}`, authMiddleware, (c: Context) => this.list(c));
+        app.get(`${this.path}`, this.authMiddleware, (c: Context) =>
+            this.list(c),
+        );
 
-        app.get(`${this.path}/:id`, authMiddleware, (c: Context) =>
+        app.get(`${this.path}/:id`, this.authMiddleware, (c: Context) =>
             this.getById(c),
         );
 
-        app.post(`${this.path}/ai`, authMiddleware, (c: Context) =>
+        app.post(`${this.path}/ai`, this.authMiddleware, (c: Context) =>
             this.createWithAi(c),
         );
 
-        app.post(`${this.path}`, authMiddleware, (c: Context) =>
+        app.post(`${this.path}`, this.authMiddleware, (c: Context) =>
             this.create(c),
         );
 
-        app.put(`${this.path}/:id`, authMiddleware, (c: Context) =>
+        app.put(`${this.path}/:id`, this.authMiddleware, (c: Context) =>
             this.update(c),
         );
 
-        app.delete(`${this.path}/:id`, authMiddleware, (c: Context) =>
+        app.delete(`${this.path}/:id`, this.authMiddleware, (c: Context) =>
             this.remove(c),
         );
     }

@@ -1,9 +1,8 @@
-import { SurveyRepository } from "../db/repositories/SurveyRepository";
+import OpenAI from "openai";
 import { PageRepository } from "../db/repositories/PageRepository";
 import { QuestionRepository } from "../db/repositories/QuestionRepository";
-import type { QuestionType } from "../models/Question";
+import { SurveyRepository } from "../db/repositories/SurveyRepository";
 import { aiSurveySchema } from "../validation/surveyAiSchemas";
-import OpenAI from "openai";
 
 export class SurveyService {
     private readonly repo: SurveyRepository;
@@ -53,7 +52,7 @@ export class SurveyService {
             questionCount?: number;
         },
     ) {
-        const apiKey = process.env.OPENAI_API_KEY?.trim();
+        const apiKey = process.env.OPENAI_API_KEY;
         if (!apiKey) {
             throw new Error("OPENAI_API_KEY is not set");
         }
@@ -153,17 +152,21 @@ export class SurveyService {
         };
 
         const createdQuestions = [];
-        for (let i = 0; i < aiSurvey.questions.length; i++) {
-            const q = aiSurvey.questions[i];
+        for (
+            let questionIndex = 0;
+            questionIndex < aiSurvey.questions.length;
+            questionIndex++
+        ) {
+            const question = aiSurvey.questions[questionIndex];
             const created = await this.questionRepo.create(
                 createdPage.id,
                 createdSurvey.id,
                 userId,
                 {
-                    type: q.type,
-                    text: q.text,
-                    options: getQuestionOptions(q),
-                    position: i + 1,
+                    type: question.type,
+                    text: question.text,
+                    options: getQuestionOptions(question),
+                    position: questionIndex + 1,
                 },
             );
 
